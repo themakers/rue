@@ -1,13 +1,13 @@
 /**
- * @module veact.ref
+ * @module rue.ref
  * @author Surmon <https://github.com/surmon-china>
  */
 
 import { useState as useReactState } from 'react'
 import { ref as vueRef, shallowRef as vueShallowRef, customRef as vueCustomRef } from '@vue/reactivity'
 import type { Ref, UnwrapRef, ShallowRef, CustomRefFactory } from '@vue/reactivity'
-import { useForceUpdate, IfAny } from './_utils'
-import { useWatch } from './watch'
+import type { IfAny } from './_utils'
+import { useReactiveSubscription } from './_subscription'
 
 /**
  * Takes an inner value and returns a reactive and mutable ref object, which
@@ -31,8 +31,7 @@ export function useRef<T>(
 export function useRef<T = any>(): Ref<T | undefined>
 export function useRef(initValue?: unknown) {
   const [refObject] = useReactState(() => vueRef(initValue))
-  const forceUpdate = useForceUpdate()
-  useWatch(refObject, forceUpdate, { deep: true })
+  useReactiveSubscription(refObject, { deep: true })
   return refObject as unknown as any
 }
 
@@ -57,8 +56,7 @@ export function useShallowRef<T>(
 export function useShallowRef<T = any>(): ShallowRef<T | undefined>
 export function useShallowRef(initValue?: unknown) {
   const [shallowRefObject] = useReactState(() => vueShallowRef(initValue))
-  const forceUpdate = useForceUpdate()
-  useWatch(shallowRefObject, forceUpdate)
+  useReactiveSubscription(shallowRefObject)
   return shallowRefObject
 }
 
@@ -71,7 +69,6 @@ export function useShallowRef(initValue?: unknown) {
  */
 export function useCustomRef<T>(factory: CustomRefFactory<T>): Ref<T> {
   const [customRefObject] = useReactState(() => vueCustomRef(factory))
-  const forceUpdate = useForceUpdate()
-  useWatch(customRefObject, forceUpdate)
+  useReactiveSubscription(customRefObject)
   return customRefObject
 }

@@ -1,0 +1,18 @@
+name: Hermes smoke
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    type: build
+    params:
+      platform: android
+      profile: hermes-smoke
+
+  smoke:
+    needs: [build]
+    type: maestro
+    params:
+      build_id: ${{ needs.build.outputs.build_id }}
+      flow_path: .maestro/hermes.yml

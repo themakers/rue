@@ -1,9 +1,9 @@
 /**
- * @module veact.watch
+ * @module rue.watch
  * @author Surmon <https://github.com/surmon-china>
  */
 
-import { useState as useReactState } from 'react'
+import { useEffect, useRef as useReactRef } from 'react'
 import { watch as vueWatch } from '@vue/reactivity'
 import type {
   ReactiveMarker,
@@ -12,8 +12,7 @@ import type {
   WatchSource,
   WatchHandle,
 } from '@vue/reactivity'
-import { onBeforeUnmount } from './lifecycle'
-import { logger } from './_logger'
+import { createWatchControl } from './_watchControl'
 
 // changelog: https://github.com/vuejs/core/blob/main/CHANGELOG.md
 // https://github.com/vuejs/core/blob/main/packages/runtime-core/src/apiWatch.ts
@@ -23,7 +22,7 @@ export interface WatchOptions<Immediate = boolean> extends DebuggerOptions {
   immediate?: Immediate
   deep?: boolean | number
   once?: boolean
-  // The `flush` option is not supported in veact at the moment.
+  // The `flush` option is not supported in Rue.
   // flush?: 'pre' | 'post' | 'sync'
 }
 
@@ -92,8 +91,11 @@ export function watch<T = any, Immediate extends Readonly<boolean> = false>(
   options: WatchOptions<Immediate> = {},
 ): WatchHandle {
   return vueWatch(source as any, callback, {
-    ...options,
-    onWarn: logger.warn,
+    deep: options.deep,
+    immediate: options.immediate,
+    once: options.once,
+    onTrack: options.onTrack,
+    onTrigger: options.onTrigger,
     scheduler: (job) => job(),
   })
 }
@@ -114,8 +116,27 @@ export function watch<T = any, Immediate extends Readonly<boolean> = false>(
  * })
  * ```
  */
-export const useWatch: typeof watch = (source: any, callback: any, options = {}) => {
-  const [watchHandle] = useReactState(() => watch(source as any, callback, options))
-  onBeforeUnmount(() => watchHandle.stop())
-  return watchHandle
+export const useWatch: typeof watch = (source: any, callback: any, options: WatchOptions<any> = {}) => {
+  const callbackRef = useReactRef(callback)
+  const controlRef = useReactRef<ReturnType<typeof createWatchControl> | null>(null)
+  if (controlRef.current === null) controlRef.current = createWatchControl()
+  const control = controlRef.current
+
+  useEffect(() => {
+    callbackRef.current = callback
+  }, [callback])
+
+  useEffect(() => {
+    if (control.stopped) return
+
+    const watchHandle = watch(source as any, (...args: any[]) => callbackRef.current(...args), options)
+    control.attach(watchHandle)
+
+    return () => {
+      control.detach(watchHandle)
+      watchHandle.stop()
+    }
+  }, [control, source, options.immediate, options.deep, options.once, options.onTrack, options.onTrigger])
+
+  return control.handle
 }

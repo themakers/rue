@@ -1,0 +1,10 @@
+{
+  "build": {
+    "hermes-smoke": {
+      "withoutCredentials": true,
+      "android": {
+        "buildType": "apk"
+      }
+    }
+  }
+}

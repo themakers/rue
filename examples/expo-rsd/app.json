@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Rue Strict DOM",
+    "slug": "rue-expo-rsd",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "jsEngine": "hermes",
+    "newArchEnabled": true,
+    "android": {
+      "package": "dev.themakers.rue.rsd"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

@@ -1,5 +1,5 @@
 /**
- * @module veact
+ * @module rue
  * @author Surmon <https://github.com/surmon-china>
  */
 

@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.1.0 - 2026-08-12
+
+### Added
+
+- Forked Veact as `@themakers/rue` with preserved MIT attribution.
+- Added `useSyncExternalStore` version subscriptions and server snapshots.
+- Added StrictMode, concurrent rendering, SSR, React Native, and Hermes tests.
+- Added shared-store examples for Vite, Expo, and Expo with React Strict DOM.
+- Added platform import, package export, bundle size, and coverage gates.
+
+### Changed
+
+- React 18 is now the minimum supported version.
+- `@vue/reactivity` is a peer dependency.
+- Hook watchers and effect scopes are created after commit and cleaned up with
+  React effects.
+- The package now ships platform-neutral ESM and CJS bundles.
+
+### Removed
+
+- Removed `react-dom` as a peer dependency.
+- Removed the automatic tag/release scripts inherited from Veact.
+
+## Veact history
+
 ### v1.0.0 (2024-09-05)
 
 #### Added

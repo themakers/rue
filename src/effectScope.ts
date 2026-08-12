@@ -1,34 +1,88 @@
 /**
- * @module veact.effectScope
+ * @module rue.effectScope
  * @author Surmon <https://github.com/surmon-china>
  */
 
-import { useState as useReactState, useRef as useReactRef, useCallback as useReactCallback } from 'react'
+import { useEffect, useRef as useReactRef } from 'react'
 import { effectScope as vueEffectScope } from '@vue/reactivity'
-import { ArgumentTypes } from './_utils'
+import type { EffectScope } from '@vue/reactivity'
+import type { ArgumentTypes } from './_utils'
+
+interface ScopeControl {
+  facade: EffectScope
+  setup?: () => unknown
+  backing?: EffectScope
+  paused: boolean
+  stopped: boolean
+}
+
+function createScopeControl(): ScopeControl {
+  const facade = vueEffectScope(true)
+  facade.stop()
+
+  const control: ScopeControl = {
+    facade,
+    paused: false,
+    stopped: false,
+  }
+
+  Object.defineProperty(facade, 'active', {
+    configurable: true,
+    get: () => control.backing?.active ?? false,
+  })
+
+  facade.run = <T>(fn: () => T): T | undefined => {
+    if (!control.setup && !control.stopped) control.setup = fn
+    return undefined
+  }
+  facade.pause = () => {
+    control.paused = true
+    control.backing?.pause()
+  }
+  facade.resume = () => {
+    if (control.stopped) return
+    control.paused = false
+    control.backing?.resume()
+  }
+  facade.stop = () => {
+    if (control.stopped) return
+    control.stopped = true
+    control.backing?.stop()
+    control.backing = undefined
+  }
+
+  return control
+}
 
 /**
- * Creates an effect scope object which can capture the reactive effects (i.e.
- * computed and watchers) created within it so that these effects can be
- * disposed together. For detailed use cases of this API, please consult its
- * corresponding {@link https://github.com/vuejs/rfcs/blob/master/active-rfcs/0041-reactivity-effect-scope.md | RFC}.
- *
- * @param detached - Can be used to create a "detached" effect scope.
- * @see {@link https://vuejs.org/api/reactivity-advanced.html#effectscope Vue `effectScope()`}
+ * Creates a component-owned effect scope. `scope.run(setup)` registers setup
+ * during render; React executes it after commit and stops it on cleanup.
  */
-export function useEffectScope(...args: ArgumentTypes<typeof vueEffectScope>) {
-  const hasRun = useReactRef(false)
-  const [scope] = useReactState(() => vueEffectScope(...args))
-  const originalRunRef = useReactRef(scope.run)
-  const runFn = useReactCallback(<T>(fn: () => T) => {
-    if (!hasRun.current) {
-      hasRun.current = true
-      return originalRunRef.current.bind(scope)(fn)
-    } else {
-      return undefined
-    }
-  }, [])
+export function useEffectScope(...args: ArgumentTypes<typeof vueEffectScope>): EffectScope {
+  const controlRef = useReactRef<ScopeControl | null>(null)
+  if (controlRef.current === null) controlRef.current = createScopeControl()
+  const control = controlRef.current
 
-  scope.run = runFn
-  return scope
+  useEffect(() => {
+    if (!control.setup || control.stopped) return
+
+    const backing = vueEffectScope(...args)
+    control.backing = backing
+
+    try {
+      backing.run(control.setup)
+      if (control.paused) backing.pause()
+    } catch (error) {
+      backing.stop()
+      control.backing = undefined
+      throw error
+    }
+
+    return () => {
+      backing.stop()
+      if (control.backing === backing) control.backing = undefined
+    }
+  }, [control])
+
+  return control.facade
 }

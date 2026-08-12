@@ -1,5 +1,5 @@
 /**
- * @module veact.computed
+ * @module rue.computed
  * @author Surmon <https://github.com/surmon-china>
  */
 
@@ -12,8 +12,7 @@ import type {
   WritableComputedOptions,
   DebuggerOptions,
 } from '@vue/reactivity'
-import { useWatch } from './watch'
-import { useForceUpdate } from './_utils'
+import { useReactiveSubscription } from './_subscription'
 
 /**
  * Takes a getter function and returns a readonly reactive ref object for the
@@ -56,7 +55,6 @@ export function useComputed<T, S = T>(
 ): WritableComputedRef<T, S>
 export function useComputed(arg1: any, arg2: any) {
   const [value] = useReactState(() => vueComputed(arg1, arg2))
-  const forceUpdate = useForceUpdate()
-  useWatch(value, forceUpdate)
+  useReactiveSubscription(value)
   return value
 }

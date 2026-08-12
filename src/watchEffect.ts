@@ -1,13 +1,12 @@
 /**
- * @module veact.watchEffect
+ * @module rue.watchEffect
  * @author Surmon <https://github.com/surmon-china>
  */
 
-import { useState as useReactState } from 'react'
+import { useEffect, useRef as useReactRef } from 'react'
 import { watch as vueWatch } from '@vue/reactivity'
 import type { WatchEffect, WatchHandle, DebuggerOptions } from '@vue/reactivity'
-import { onBeforeUnmount } from './lifecycle'
-import { logger } from './_logger'
+import { createWatchControl } from './_watchControl'
 
 // changelog: https://github.com/vuejs/core/blob/main/CHANGELOG.md
 // https://github.com/vuejs/core/blob/main/packages/runtime-core/src/apiWatch.ts
@@ -34,8 +33,8 @@ export type WatchEffectOptions = DebuggerOptions
  */
 export function watchEffect(effectFn: WatchEffect, options: WatchEffectOptions = {}): WatchHandle {
   return vueWatch(effectFn, null, {
-    ...options,
-    onWarn: logger.warn,
+    onTrack: options.onTrack,
+    onTrigger: options.onTrigger,
     scheduler: (job) => job(),
   })
 }
@@ -57,8 +56,92 @@ export function watchEffect(effectFn: WatchEffect, options: WatchEffectOptions =
  * // -> logs 1
  * ```
  */
-export const useWatchEffect: typeof watchEffect = (effect: any, options?: any) => {
-  const [watchHandle] = useReactState(() => watchEffect(effect, options))
-  onBeforeUnmount(() => watchHandle.stop())
-  return watchHandle
+export const useWatchEffect: typeof watchEffect = (effect: any, options: WatchEffectOptions = {}) => {
+  const effectRef = useReactRef(effect)
+  const optionsRef = useReactRef(options)
+  const committedEffectRef = useReactRef(effect)
+  const runVersionRef = useReactRef(0)
+  const committedRunVersionRef = useReactRef(0)
+  const backingRef = useReactRef<WatchHandle | undefined>(undefined)
+  const pendingRetrackVersionRef = useReactRef<number | null>(null)
+  const replaceBackingRef = useReactRef<() => void>(() => undefined)
+  const controlRef = useReactRef<ReturnType<typeof createWatchControl> | null>(null)
+  if (controlRef.current === null) {
+    controlRef.current = createWatchControl(() => {
+      const pendingVersion = pendingRetrackVersionRef.current
+      if (pendingVersion === null) return
+
+      pendingRetrackVersionRef.current = null
+      if (runVersionRef.current === pendingVersion) replaceBackingRef.current()
+    })
+  }
+  const control = controlRef.current
+  const runVersionAtRender = runVersionRef.current
+
+  const createBacking = () =>
+    watchEffect((onCleanup) => {
+      runVersionRef.current++
+      return effectRef.current(onCleanup)
+    }, optionsRef.current)
+
+  useEffect(() => {
+    effectRef.current = effect
+    optionsRef.current = options
+
+    replaceBackingRef.current = () => {
+      const backing = backingRef.current
+      if (backing) {
+        control.detach(backing)
+        backing.stop()
+      }
+
+      if (control.stopped) {
+        backingRef.current = undefined
+        return
+      }
+
+      const nextBacking = createBacking()
+      backingRef.current = nextBacking
+      control.attach(nextBacking)
+    }
+
+    const backing = backingRef.current
+    const effectChanged = committedEffectRef.current !== effect
+    const ranBeforeRender = committedRunVersionRef.current !== runVersionAtRender
+    const ranAfterRender = runVersionRef.current !== runVersionAtRender
+    const needsRetrack = effectChanged && (!ranBeforeRender || ranAfterRender)
+    if (backing && needsRetrack && !control.stopped) {
+      if (control.paused) {
+        pendingRetrackVersionRef.current = runVersionRef.current
+      } else {
+        replaceBackingRef.current()
+      }
+    } else if (effectChanged) {
+      pendingRetrackVersionRef.current = null
+    }
+
+    committedEffectRef.current = effect
+    committedRunVersionRef.current = runVersionRef.current
+  })
+
+  useEffect(() => {
+    if (control.stopped) return
+
+    const watchHandle = createBacking()
+    backingRef.current = watchHandle
+    control.attach(watchHandle)
+    committedRunVersionRef.current = runVersionRef.current
+
+    return () => {
+      const backing = backingRef.current
+      if (backing) {
+        control.detach(backing)
+        backing.stop()
+        backingRef.current = undefined
+      }
+      pendingRetrackVersionRef.current = null
+    }
+  }, [control, options?.onTrack, options?.onTrigger])
+
+  return control.handle
 }

@@ -1,0 +1,23 @@
+{
+  "name": "@rue/example-expo",
+  "version": "0.0.0",
+  "private": true,
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "typecheck": "tsc --noEmit",
+    "bundle": "expo export --platform android --output-dir dist"
+  },
+  "dependencies": {
+    "@rue/shared-store": "workspace:*",
+    "@themakers/rue": "workspace:*",
+    "expo": "~57.0.12",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-native": "0.86.2"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18",
+    "typescript": "6.0.3"
+  }
+}

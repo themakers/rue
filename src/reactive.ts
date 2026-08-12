@@ -1,13 +1,12 @@
 /**
- * @module veact.reactive
+ * @module rue.reactive
  * @author Surmon <https://github.com/surmon-china>
  */
 
 import { useState as useReactState } from 'react'
 import { reactive as vueReactive, shallowReactive as vueShallowReactive } from '@vue/reactivity'
 import type { Reactive, ShallowReactive } from '@vue/reactivity'
-import { useWatch } from './watch'
-import { useForceUpdate } from './_utils'
+import { useReactiveSubscription } from './_subscription'
 
 /**
  * Returns a reactive proxy of the object.
@@ -27,8 +26,7 @@ import { useForceUpdate } from './_utils'
 export function useReactive<T extends object>(target: T): Reactive<T>
 export function useReactive(target: object) {
   const [value] = useReactState(() => vueReactive(target))
-  const forceUpdate = useForceUpdate()
-  useWatch(value, forceUpdate)
+  useReactiveSubscription(value)
   return value
 }
 
@@ -64,7 +62,6 @@ export function useReactive(target: object) {
  */
 export function useShallowReactive<T extends object>(target: T): ShallowReactive<T> {
   const [value] = useReactState(() => vueShallowReactive(target))
-  const forceUpdate = useForceUpdate()
-  useWatch(value, forceUpdate)
+  useReactiveSubscription(value)
   return value
 }

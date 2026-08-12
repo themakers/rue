@@ -1,0 +1,8 @@
+appId: dev.themakers.rue.rsd
+---
+- launchApp:
+    clearState: true
+- assertVisible: 'RUE / STRICT DOM / HERMES'
+- assertVisible: '0'
+- tapOn: 'Increment'
+- assertVisible: '1'

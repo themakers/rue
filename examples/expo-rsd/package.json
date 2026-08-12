@@ -1,0 +1,30 @@
+{
+  "name": "@rue/example-expo-rsd",
+  "version": "0.0.0",
+  "private": true,
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "typecheck": "tsc --noEmit",
+    "bundle": "expo export --platform android --output-dir dist"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "~57.0.9",
+    "@rue/shared-store": "workspace:*",
+    "@themakers/rue": "workspace:*",
+    "expo": "~57.0.12",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.2",
+    "react-native-web": "0.21.2",
+    "react-strict-dom": "0.0.55"
+  },
+  "devDependencies": {
+    "@babel/core": "7.29.7",
+    "@types/react": "19.2.18",
+    "autoprefixer": "10.5.4",
+    "babel-preset-expo": "~57.0.6",
+    "postcss": "8.5.26",
+    "typescript": "6.0.3"
+  }
+}

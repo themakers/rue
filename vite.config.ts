@@ -1,48 +1,34 @@
-/// <reference types="vitest/config" />
 import viteDts from 'vite-plugin-dts'
 import viteReact from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
-import packageJson from './package.json'
+import packageJson from './package.json' with { type: 'json' }
 
 const banner = `
 /*!
  * ${packageJson.name} v${packageJson.version}
  * ${packageJson.homepage}
  *
- * Includes @vue/reactivity
+ * Uses @vue/reactivity
  * https://github.com/vuejs/core/tree/main/packages/reactivity
  *
- * (c) 2021-present ${packageJson.author} and Veact contributors.
+ * (c) 2021-present Surmon, Veact contributors, and Rue contributors.
  * Released under the ${packageJson.license} License.
- *
- * Date: ${new Date().toISOString()}
  */
 `
 
 export default defineConfig({
-  // https://github.com/qmhc/vite-plugin-dts
-  plugins: [viteReact(), viteDts({ rollupTypes: true })],
-  test: {
-    environment: 'happy-dom',
-    coverage: {
-      include: ['src/**/*'],
-    },
-  },
+  plugins: [viteReact(), viteDts({ bundleTypes: true, tsconfigPath: './tsconfig.lib.json' })],
   build: {
+    target: 'es2017',
     lib: {
       entry: './src/index.ts',
-      name: 'veact',
-      fileName: 'veact',
+      formats: ['es', 'cjs'],
+      fileName: (format) => (format === 'es' ? 'rue.js' : 'rue.cjs'),
     },
     rollupOptions: {
-      external: ['react', 'react-dom', '@vue/reactivity'],
+      external: ['react', '@vue/reactivity'],
       output: {
         banner: `\n${banner}\n`,
-        globals: {
-          react: 'React',
-          'react-dom': 'ReactDOM',
-          '@vue/reactivity': 'VueReactivity',
-        },
       },
     },
   },

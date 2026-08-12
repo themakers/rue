@@ -1,0 +1,23 @@
+name: Hermes runtime
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  eas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.1'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: npx eas-cli@latest workflow:run .eas/workflows/hermes-smoke.yml --non-interactive
+        working-directory: examples/expo-rsd
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}

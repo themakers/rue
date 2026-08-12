@@ -1,10 +1,9 @@
 /**
- * @module veact.reactivity
+ * @module rue.reactivity
  * @author Surmon <https://github.com/surmon-china>
  */
 
-import { useWatch } from './watch'
-import { useForceUpdate } from './_utils'
+import { useReactiveSubscription } from './_subscription'
 
 /**
  * Converts some of the 'raw Vue' data, which is not already wrapped in a hook,
@@ -14,7 +13,7 @@ import { useForceUpdate } from './_utils'
  * @example
  * ```tsx
  * import React from 'react'
- * import { ref, useReactivity } from 'veact'
+ * import { ref, useReactivity } from '@themakers/rue'
  *
  * const countRef = ref(0)
  *
@@ -35,8 +34,7 @@ import { useForceUpdate } from './_utils'
  * ```
  */
 export function useReactivity<T = any>(getter: () => T): T {
-  const forceUpdate = useForceUpdate()
   // deep > watch > traverse(getter()) > ref | array | set | map | plain object(reactive) > force update
-  useWatch(() => getter(), forceUpdate, { deep: true })
+  useReactiveSubscription(() => getter(), { deep: true })
   return getter()
 }

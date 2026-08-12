@@ -58,7 +58,7 @@ test('<useCustomRef>', () => {
   let refValue = 10
   const { result } = renderHook(() => {
     onUpdated(() => renderCount++)
-    return useCustomRef((track, trigger) => ({
+    return useCustomRef<number>((track, trigger) => ({
       get() {
         track()
         return refValue

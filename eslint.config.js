@@ -25,5 +25,9 @@ export default [
   ...ts.configs.recommended,
   prettier,
   { rules },
-  { ignores: ['node_modules', 'dist'] },
+  {
+    files: ['**/*.cjs'],
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+  { ignores: ['**/node_modules/**', '**/dist/**', '**/.cache/**', '**/.expo/**'] },
 ]

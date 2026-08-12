@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Rue Expo",
+    "slug": "rue-expo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "jsEngine": "hermes",
+    "newArchEnabled": true,
+    "android": {
+      "package": "dev.themakers.rue.expo"
+    }
+  }
+}

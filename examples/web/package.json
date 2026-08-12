@@ -1,0 +1,23 @@
+{
+  "name": "@rue/example-web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build"
+  },
+  "dependencies": {
+    "@rue/shared-store": "workspace:*",
+    "@themakers/rue": "workspace:*",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "@vitejs/plugin-react": "^6.0.5",
+    "typescript": "6.0.3",
+    "vite": "^8.2.1"
+  }
+}

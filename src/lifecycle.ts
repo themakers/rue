@@ -1,5 +1,5 @@
 /**
- * @module veact.lifecycle
+ * @module rue.lifecycle
  * @author Surmon <https://github.com/surmon-china>
  */
 
@@ -24,9 +24,14 @@ export function onMounted(fn: () => any) {
  * @see {@link https://react.dev/reference/react/Component#componentwillunmount React `componentWillUnmount()`}
  */
 export function onBeforeUnmount(fn: () => void) {
+  const fnRef = useRef(fn)
+  useEffect(() => {
+    fnRef.current = fn
+  }, [fn])
+
   useEffect(() => {
     return () => {
-      fn()
+      fnRef.current()
     }
   }, [])
 }
@@ -40,9 +45,20 @@ export function onBeforeUnmount(fn: () => void) {
  */
 export function onUpdated(fn: () => void) {
   const isMounted = useRef(false)
+  const fnRef = useRef(fn)
+  useEffect(() => {
+    fnRef.current = fn
+  }, [fn])
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
   useEffect(() => {
     if (isMounted.current) {
-      fn()
+      fnRef.current()
     } else {
       isMounted.current = true
     }
