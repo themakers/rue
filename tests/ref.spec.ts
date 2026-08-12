@@ -81,3 +81,31 @@ test('<useCustomRef>', () => {
   expect(result.current.value).toBe(12)
   expect(renderCount).toBe(2)
 })
+
+test('<useCustomRef> rerenders for an explicit trigger with a stable value', () => {
+  let renderCount = 0
+  let triggerRef!: () => void
+
+  const { result } = renderHook(() => {
+    renderCount++
+    return useCustomRef<number>((track, trigger) => {
+      triggerRef = trigger
+      return {
+        get() {
+          track()
+          return 1
+        },
+        set() {
+          trigger()
+        },
+      }
+    })
+  })
+
+  expect(result.current.value).toBe(1)
+  expect(renderCount).toBe(1)
+
+  act(() => triggerRef())
+  expect(result.current.value).toBe(1)
+  expect(renderCount).toBe(2)
+})

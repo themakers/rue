@@ -9,7 +9,7 @@ and component lifecycle.
 1. `@vue/reactivity` supplies refs, proxies, computed values, watchers, and
    effect scopes.
 2. Rue's raw `watch` and `watchEffect` wrappers select synchronous scheduling.
-3. A version store adapts a Vue watch source to `useSyncExternalStore`.
+3. A version store adapts a Vue `ReactiveEffect` to `useSyncExternalStore`.
 4. Public hooks own values and bind watchers/scopes to committed React effects.
 
 The runtime may import only `react`, `@vue/reactivity`, and local modules. It
@@ -19,45 +19,68 @@ must never branch on a renderer or access DOM/native globals.
 
 Each render subscription has four stable operations:
 
-- `subscribe(listener)` starts the Vue watcher for the first listener and stops
+- `subscribe(listener)` starts the Vue effect for the first listener and stops
   it after the last listener leaves;
 - `getSnapshot()` returns the cached numeric version;
-- `getServerSnapshot()` returns the server version without creating a watcher;
+- `getServerSnapshot()` returns the server version without creating an effect;
 - Vue invalidation increments the version before notifying listeners.
 
 Before the first subscription, Rue takes a read-only structural capture of the
-watched source. Immediately after arming the Vue watcher, it captures the source
+watched source. Immediately after arming the Vue effect, it captures the source
 again. If a sibling layout effect or another external actor mutated the source
 between render and subscribe, Rue advances the version before React's
 post-subscribe snapshot check. This closes the initial subscription window
 without creating a Vue effect during render. The capture follows the same
-deep/shallow boundary as the eventual watcher and handles refs, arrays, maps,
+deep/shallow boundary as the eventual effect and handles refs, arrays, maps,
 sets, and cyclic objects.
 
-The capture reads enumerable data properties and accessors. As with React's
+The capture reads enumerable data properties and accessors. Two consecutive
+pure source reads distinguish stable results from getters that allocate a new
+plain container on every read. Allocated containers are compared structurally;
+stable roots, refs, and reactive values retain identity. As with React's
 `getSnapshot` contract and Vue computed getters, accessors participating in a
 reactive source must be pure: they may read reactive dependencies but must not
 perform side effects. Reading them is required to distinguish an accessor value
 changed between render and subscribe.
+
+Built-in opaque values such as `Date`, `RegExp`, and URL-like objects contribute
+their public scalar representation to the capture. Other non-enumerable opaque
+objects conservatively notify when a tracked dependency triggers, because Rue
+cannot inspect their internal slots without relying on platform or Vue internals.
 
 The snapshot is a primitive and remains `Object.is`-equal between mutations.
 Vue's scheduler runs the invalidation job synchronously. React can therefore
 observe an external-store change during a transition and retry it as a blocking
 update, preventing a stale concurrent commit.
 
-Watchers start in `subscribe`, never while rendering. A render that is thrown
-away creates only an unreferenced plain adapter object. StrictMode follows this
+Effects start in `subscribe`, never while rendering. The adapter is memoized for
+the current source; a render that is thrown away creates only an unreferenced
+plain adapter object and cannot replace committed hook state. StrictMode follows this
 sequence safely:
 
 ```text
-subscribe -> start watcher -> unsubscribe -> stop watcher
-subscribe -> start fresh watcher -> ... -> unsubscribe -> stop watcher
+subscribe -> start effect -> unsubscribe -> stop effect
+subscribe -> start fresh effect -> ... -> unsubscribe -> stop effect
 ```
 
-The adapter watches complete hook sources rather than tracking arbitrary reads
+The adapter traverses complete hook sources rather than tracking arbitrary reads
 inside React render. This keeps dependency collection independent of render
 attempts. Deep subscriptions have traversal cost proportional to the watched
 graph; shallow hooks retain Vue's shallow behavior.
+
+`useReactivity` evaluates its getter once per React render and returns that exact
+result. The same result seeds render-to-subscribe reconciliation, so Rue cannot
+subscribe to one freshly allocated wrapper while returning another. The getter
+must be a pure read and may return a new plain wrapper around stable refs or
+proxies; it must not create a new reactive store on each invocation. The first
+committed effect performs two additional reads to classify a stable root versus
+a wrapper factory; both participate in Vue dependency tracking.
+
+The `ReactiveEffect` scheduler compares structural captures before notifying
+React, preserving computed-value equality bailouts. Custom and shallow refs opt
+into trigger-level invalidation, including module refs returned directly by
+`useReactivity`, because `customRef.trigger()` and `triggerRef(shallowRef)` are
+intentional notifications even when the getter returns the same value.
 
 ## Watch hooks
 
@@ -106,7 +129,7 @@ that add SSR should create their stores per request.
 
 Future changes must preserve these rules:
 
-1. No Vue watcher, lifecycle callback, or watch effect is created or executed
+1. No Vue effect, lifecycle callback, or watch effect is created or executed
    during React render; source getters used for snapshot reconciliation are
    pure reads.
 2. `getSnapshot` is pure, cached, cheap, and stable between mutations.
@@ -118,6 +141,6 @@ Future changes must preserve these rules:
 7. Raw watch APIs remain synchronous and hook watch APIs remain commit-owned.
 8. `@vue/reactivity` remains external and must not be bundled into Rue.
 
-Automated tests enforce transitions, StrictMode cleanup, abandoned renders,
-SSR, React Native behavior, Hermes compilation, forbidden imports, bundle size,
-and package exports.
+Automated tests enforce interrupted transitions, StrictMode cleanup, abandoned
+renders, SSR, React Native behavior, Hermes compilation, forbidden imports,
+bundle size, and package exports installed in an isolated consumer.

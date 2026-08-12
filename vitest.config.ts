@@ -6,6 +6,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: ['tests/**/*.spec.{ts,tsx}'],
+    exclude: ['tests/tearing.spec.tsx'],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],

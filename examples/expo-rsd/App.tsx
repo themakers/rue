@@ -1,8 +1,44 @@
 import '@expo/metro-runtime'
 import './strict.css'
+import type { ChangeEvent } from 'react'
 import { css, html } from 'react-strict-dom'
-import { useReactivity } from '@themakers/rue'
+import { useReactive, useReactivity } from '@themakers/rue'
 import { addTodo, increment, remainingTodos, store, toggleTodo } from '@rue/shared-store'
+
+function LocalTodos() {
+  const state = useReactive({
+    draft: '',
+    nextId: 2,
+    todos: [{ id: 1, title: 'Owned by this component', done: false }],
+  })
+
+  const add = () => {
+    const title = state.draft.trim()
+    if (!title) return
+    state.todos.push({ id: state.nextId++, title, done: false })
+    state.draft = ''
+  }
+
+  return (
+    <html.section style={styles.card}>
+      <html.h2 style={styles.heading}>Local useReactive tasks</html.h2>
+      <html.input
+        aria-label="Local task title"
+        style={styles.input}
+        value={state.draft}
+        onChange={(event: ChangeEvent<HTMLInputElement>) => (state.draft = event.target.value)}
+      />
+      <html.button style={styles.secondary} onClick={add}>
+        Add local task
+      </html.button>
+      {state.todos.map((todo) => (
+        <html.button key={todo.id} style={styles.todo} onClick={() => (todo.done = !todo.done)}>
+          {todo.done ? 'DONE' : 'OPEN'} / {todo.title}
+        </html.button>
+      ))}
+    </html.section>
+  )
+}
 
 export default function App() {
   const state = useReactivity(() => ({ store, remainingTodos }))
@@ -29,6 +65,7 @@ export default function App() {
           Add generated task
         </html.button>
       </html.section>
+      <LocalTodos />
       <html.aside style={styles.log}>
         <html.strong>watch() history</html.strong>
         {state.store.history.map((entry, index) => (
@@ -54,6 +91,7 @@ const styles = css.create({
   number: { fontSize: 96, lineHeight: 1 },
   primary: { alignSelf: 'flex-start', backgroundColor: '#1e2822', color: '#ffffff', padding: 14 },
   card: { padding: 20, borderWidth: 1, borderStyle: 'solid', gap: 10 },
+  input: { padding: 12, borderWidth: 1, borderStyle: 'solid', backgroundColor: '#ffffff' },
   heading: { fontSize: 26, marginBlock: 4 },
   todo: {
     paddingBlock: 14,

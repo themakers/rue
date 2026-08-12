@@ -47,6 +47,11 @@ Requirements:
 - `@vue/reactivity` 3.5.x;
 - Proxy support, available in current browsers and Hermes.
 
+CI tests the minimum React 18.3.1 peer, the latest React 19 web release, and the
+React/React Native versions pinned by the current Expo SDK. Expo applications
+should follow Expo's renderer version matrix rather than upgrading React Native
+independently.
+
 `react` and `@vue/reactivity` are peer dependencies. Ensure the application has
 only one resolved copy of `@vue/reactivity`, especially when Vue and Rue are
 installed together. Separate copies maintain separate dependency graphs, so a
@@ -190,6 +195,9 @@ pnpm --filter @rue/example-web dev
 pnpm --filter @rue/example-expo start
 pnpm --filter @rue/example-expo-rsd start
 ```
+
+Each renderer also includes component-owned TODO state built with `useReactive`,
+alongside the shared module store consumed through `useReactivity`.
 
 Validate all examples:
 

@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useLayoutEffect } from 'react'
+import { startTransition, Suspense, useLayoutEffect, useState } from 'react'
 import { act, render, renderHook, screen } from '@testing-library/react'
 import { renderToString } from 'react-dom/server'
 import { afterEach, expect, test, vi } from 'vitest'
@@ -9,44 +9,19 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-test('shared reactive state has a consistent snapshot in a transition', () => {
-  const store = reactive({ count: 0 })
-  const commits: string[] = []
-
-  function Consumer({ name }: { name: string }) {
-    const state = useReactivity(() => store)
-    useEffect(() => {
-      commits.push(`${name}:${state.count}`)
-    })
-    return <span data-testid={name}>{state.count}</span>
-  }
-
-  render(
-    <>
-      <Consumer name="first" />
-      <Consumer name="second" />
-    </>,
-  )
-
-  act(() => {
-    startTransition(() => {
-      store.count++
-    })
-  })
-
-  expect(screen.getByTestId('first').textContent).toBe('1')
-  expect(screen.getByTestId('second').textContent).toBe('1')
-  expect(commits.slice(-2)).toEqual(['first:1', 'second:1'])
-})
-
 test('updates from timers rerender subscribed components', () => {
   vi.useFakeTimers()
 
-  const { result } = renderHook(() => useReactive({ count: 0 }))
+  let renders = 0
+  const { result } = renderHook(() => {
+    renders++
+    return useReactive({ count: 0 })
+  })
   setTimeout(() => result.current.count++, 10)
 
   act(() => vi.runAllTimers())
   expect(result.current.count).toBe(1)
+  expect(renders).toBe(2)
 })
 
 test('a mutation between render and subscribe is reconciled before settling', () => {
@@ -74,6 +49,45 @@ test('a mutation between render and subscribe is reconciled before settling', ()
   expect(screen.getByTestId('gap-value').textContent).toBe('1')
 })
 
+test('a failed initial subscription leaves no active effect', () => {
+  const baseline = getActiveSubscriptionCount()
+  let shouldThrow = false
+  const store = reactive({
+    get value() {
+      if (shouldThrow) throw new Error('subscribe failed')
+      return 0
+    },
+  })
+  const originalConsoleError = console.error
+  console.error = () => undefined
+
+  function Mutator() {
+    useLayoutEffect(() => {
+      shouldThrow = true
+    }, [])
+    return null
+  }
+
+  function Consumer() {
+    const state = useReactivity(() => store)
+    return <span>{state.value}</span>
+  }
+
+  try {
+    expect(() =>
+      render(
+        <>
+          <Mutator />
+          <Consumer />
+        </>,
+      ),
+    ).toThrow('subscribe failed')
+    expect(getActiveSubscriptionCount()).toBe(baseline)
+  } finally {
+    console.error = originalConsoleError
+  }
+})
+
 test('a root source replacement is reconciled even when values are equal', () => {
   const first = reactive({ value: 0 })
   const second = reactive({ value: 0 })
@@ -99,6 +113,38 @@ test('a root source replacement is reconciled even when values are equal', () =>
   )
 
   expect(screen.getByTestId('identity-value').textContent).toBe('second')
+})
+
+test('an accessor reactive replacement is reconciled even when values are equal', () => {
+  const first = reactive({ value: 0 })
+  const second = reactive({ value: 0 })
+  let current = first
+  const store = reactive({
+    get selected() {
+      return current
+    },
+  })
+
+  function Mutator() {
+    useLayoutEffect(() => {
+      current = second
+    }, [])
+    return null
+  }
+
+  function Consumer() {
+    const state = useReactivity(() => store)
+    return <span data-testid="accessor-identity">{state.selected === second ? 'second' : 'first'}</span>
+  }
+
+  render(
+    <>
+      <Mutator />
+      <Consumer />
+    </>,
+  )
+
+  expect(screen.getByTestId('accessor-identity').textContent).toBe('second')
 })
 
 test('an accessor dependency changed during layout is reconciled', () => {
@@ -169,6 +215,52 @@ test('useReactivity replaces its watched source after rerender', () => {
   const afterCurrentMutation = renders
   act(() => first.value++)
   expect(renders).toBe(afterCurrentMutation)
+})
+
+test('an abandoned source switch cannot replace the committed subscription', async () => {
+  const first = reactive({ count: 0 })
+  const second = reactive({ count: 0 })
+  let switchSource!: () => void
+  let release!: () => void
+  let blocked = true
+  const gate = new Promise<void>((resolve) => {
+    release = () => {
+      blocked = false
+      resolve()
+    }
+  })
+
+  function Consumer() {
+    const [source, setSource] = useState(first)
+    switchSource = () => setSource(second)
+    const state = useReactivity(() => source)
+    if (source === second && blocked) throw gate
+    return (
+      <span data-testid="source-count">
+        {source === first ? `first:${state.count}` : `second:${state.count}`}
+      </span>
+    )
+  }
+
+  render(
+    <Suspense fallback={<span>waiting</span>}>
+      <Consumer />
+    </Suspense>,
+  )
+
+  act(() => startTransition(switchSource))
+  expect(screen.getByTestId('source-count').textContent).toBe('first:0')
+
+  act(() => first.count++)
+  expect(screen.getByTestId('source-count').textContent).toBe('first:1')
+
+  await act(async () => release())
+  expect(screen.getByTestId('source-count').textContent).toBe('second:0')
+
+  act(() => first.count++)
+  expect(screen.getByTestId('source-count').textContent).toBe('second:0')
+  act(() => second.count++)
+  expect(screen.getByTestId('source-count').textContent).toBe('second:1')
 })
 
 test('snapshot reconciliation traverses arrays, collections, and cycles', () => {

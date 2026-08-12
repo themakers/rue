@@ -11,6 +11,9 @@ All notable changes to this project will be documented in this file.
 - Added StrictMode, concurrent rendering, SSR, React Native, and Hermes tests.
 - Added shared-store examples for Vite, Expo, and Expo with React Strict DOM.
 - Added platform import, package export, bundle size, and coverage gates.
+- Added interrupted-transition tearing coverage and a broader React Native
+  behavioral matrix.
+- Added component-owned `useReactive` TODO examples for every renderer.
 
 ### Changed
 
@@ -19,6 +22,12 @@ All notable changes to this project will be documented in this file.
 - Hook watchers and effect scopes are created after commit and cleaned up with
   React effects.
 - The package now ships platform-neutral ESM and CJS bundles.
+- Render subscriptions use commit-owned `ReactiveEffect` instances, including
+  explicit same-value `customRef` triggers.
+- `useReactivity` evaluates and returns one getter result per render without
+  mutating committed adapter state from discarded renders.
+- CI covers React 18.3.1, the latest React 19 web release, and Expo's pinned
+  React Native renderer matrix.
 
 ### Removed
 

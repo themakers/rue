@@ -35,6 +35,7 @@ import { useReactiveSubscription } from './_subscription'
  */
 export function useReactivity<T = any>(getter: () => T): T {
   // deep > watch > traverse(getter()) > ref | array | set | map | plain object(reactive) > force update
-  useReactiveSubscription(() => getter(), { deep: true })
-  return getter()
+  const value = getter()
+  useReactiveSubscription(getter, { deep: true }, value)
+  return value
 }

@@ -1,7 +1,44 @@
 import { StatusBar } from 'expo-status-bar'
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native'
-import { useReactivity } from '@themakers/rue'
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { useReactive, useReactivity } from '@themakers/rue'
 import { addTodo, increment, remainingTodos, store, toggleTodo } from '@rue/shared-store'
+
+function LocalTodos() {
+  const state = useReactive({
+    draft: '',
+    nextId: 2,
+    todos: [{ id: 1, title: 'Owned by this component', done: false }],
+  })
+
+  const add = () => {
+    const title = state.draft.trim()
+    if (!title) return
+    state.todos.push({ id: state.nextId++, title, done: false })
+    state.draft = ''
+  }
+
+  return (
+    <View style={styles.card}>
+      <Text style={styles.heading}>Local useReactive tasks</Text>
+      <TextInput
+        accessibilityLabel="Local task title"
+        style={styles.input}
+        value={state.draft}
+        onChangeText={(value) => (state.draft = value)}
+      />
+      <Pressable accessibilityRole="button" style={styles.secondary} onPress={add}>
+        <Text>Add local task</Text>
+      </Pressable>
+      {state.todos.map((todo) => (
+        <Pressable key={todo.id} style={styles.todo} onPress={() => (todo.done = !todo.done)}>
+          <Text style={todo.done ? styles.done : styles.todoText}>
+            {todo.done ? 'DONE' : 'OPEN'} {todo.title}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  )
+}
 
 export default function App() {
   const state = useReactivity(() => ({ store, remainingTodos }))
@@ -32,6 +69,7 @@ export default function App() {
             <Text>Add generated task</Text>
           </Pressable>
         </View>
+        <LocalTodos />
         <View style={styles.log}>
           <Text style={styles.logTitle}>watch() history</Text>
           {state.store.history.map((entry, index) => (
@@ -66,6 +104,7 @@ const styles = StyleSheet.create({
   },
   primaryText: { color: '#ffffff', fontWeight: '700' },
   card: { padding: 20, borderWidth: 1, gap: 10 },
+  input: { borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10 },
   heading: { fontSize: 25, fontWeight: '800', marginBottom: 8 },
   todo: { borderTopWidth: 1, paddingVertical: 14 },
   todoText: { color: '#1e2822' },

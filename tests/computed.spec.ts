@@ -1,6 +1,6 @@
 import { test, expect } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { isRef, onUpdated, useRef, useComputed } from '../src'
+import { isRef, onUpdated, ref, useRef, useComputed } from '../src'
 
 test('<useComputed> readonly', () => {
   let renderCount = 0
@@ -52,4 +52,18 @@ test('<useComputed> writable', () => {
   expect(result.current.doubled.value).toBe(40)
   expect(result.current.count.value).toBe(20)
   expect(renderCount).toBe(2)
+})
+
+test('<useComputed> skips a rerender when its value is unchanged', () => {
+  const count = ref(0)
+  let renderCount = 0
+  const { result } = renderHook(() => {
+    renderCount++
+    const parity = useComputed(() => count.value % 2)
+    return { count, parity }
+  })
+
+  act(() => (result.current.count.value = 2))
+  expect(result.current.parity.value).toBe(0)
+  expect(renderCount).toBe(1)
 })
