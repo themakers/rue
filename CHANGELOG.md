@@ -29,8 +29,9 @@ All notable changes to this project will be documented in this file.
   mutating committed adapter state from discarded renders.
 - CI covers React 18.3.1, the latest React 19 web release, and Expo's pinned
   React Native renderer matrix.
-- Git dependencies now build the ignored `dist` output through `prepare`, while
-  package tarballs build and validate it through `prepack`.
+- Git dependencies now build the ignored `dist` output through `prepare`, with
+  a dependency-free Bun fallback when git dev dependencies are unavailable;
+  package tarballs still receive the full validated `prepack` build.
 
 ### Removed
 

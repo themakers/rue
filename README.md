@@ -52,11 +52,21 @@ release exists:
 }
 ```
 
-The repository does not commit `dist`. During a standard npm or pnpm git
-installation, the package manager installs Rue's build-time dependencies and
-runs `prepare` to generate `dist` inside the installed package. `prepack`
-performs the same build and validates the output before creating a package
-tarball. Pin a commit SHA so installs remain reproducible.
+The repository does not commit `dist`. During an npm or pnpm git installation,
+`prepare` uses the installed development toolchain to generate the package.
+Bun does not install a git dependency's development dependencies, so Rue's
+trusted `prepare` automatically falls back to Bun's built-in bundler and its
+source declarations:
+
+```sh
+bun add --trust github:themakers/rue#<commit-sha>
+```
+
+If the application declares `trustedDependencies` manually, include
+`@themakers/rue` while retaining any other packages whose install scripts the
+application needs. `prepack` always performs the full build and validates the
+output before creating a package tarball. Pin a commit SHA so installs remain
+reproducible.
 
 Requirements:
 
