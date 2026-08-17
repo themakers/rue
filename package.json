@@ -52,7 +52,7 @@
   "scripts": {
     "dev": "vite",
     "clean": "node scripts/clean.mjs",
-    "build": "pnpm clean && vite build",
+    "build": "npm run clean && vite build",
     "typecheck": "tsc -p tsconfig.lib.json --noEmit && tsc -p tsconfig.web.json --noEmit && tsc -p tsconfig.native.json --noEmit",
     "lint": "eslint src tests tests-native tests-hermes scripts examples vite.config.ts vitest.config.ts vitest.tearing.config.ts",
     "format": "prettier --write \"{src,tests,tests-native,tests-hermes,scripts,docs,examples}/**/*.{ts,tsx,js,cjs,mjs,json,md,css,yml}\" \"*.{ts,js,cjs,mjs,json,yaml}\" README.md MIGRATION.md CHANGELOG.md \".github/workflows/*.yml\"",
@@ -71,7 +71,8 @@
     "check:web-bundle": "node scripts/check-web-bundle.mjs",
     "pack:smoke": "node scripts/pack-smoke.mjs",
     "ci": "pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm test:native && pnpm test:hermes && pnpm build && pnpm check:platform && pnpm check:size && pnpm check:package && pnpm pack:smoke && pnpm examples:check && pnpm examples:bundle",
-    "prepack": "pnpm build && pnpm check:platform && pnpm check:size && pnpm check:package"
+    "prepare": "npm run build",
+    "prepack": "npm run build && npm run check:platform && npm run check:size && npm run check:package"
   },
   "peerDependencies": {
     "@vue/reactivity": "^3.5.0",

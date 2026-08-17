@@ -1,6 +1,7 @@
 import { expect, expectTypeOf, test } from 'vitest'
 import type { ComputedRef, EffectScope, Ref, WatchHandle, WritableComputedRef } from '@vue/reactivity'
-import { useComputed, useEffectScope, useReactive, useRef, useWatch } from '../src'
+import type { TemplateRef } from '../src'
+import { useComputed, useEffectScope, useReactive, useRef, useTemplateRef, useWatch } from '../src'
 
 function assertPublicTypes() {
   const count = useRef(1)
@@ -17,6 +18,7 @@ function assertPublicTypes() {
     expectTypeOf(oldValue).toEqualTypeOf<number>()
   })
   const scope = useEffectScope()
+  const element = useTemplateRef<HTMLDivElement>()
 
   expectTypeOf(count).toEqualTypeOf<Ref<number, number>>()
   expectTypeOf(state.nested.ready).toEqualTypeOf<boolean>()
@@ -24,6 +26,9 @@ function assertPublicTypes() {
   expectTypeOf(writable).toEqualTypeOf<WritableComputedRef<number, number>>()
   expectTypeOf(handle).toEqualTypeOf<WatchHandle>()
   expectTypeOf(scope).toEqualTypeOf<EffectScope>()
+  expectTypeOf(element).toEqualTypeOf<TemplateRef<HTMLDivElement>>()
+  expectTypeOf(element.value).toEqualTypeOf<HTMLDivElement | null>()
+  expectTypeOf(element.current).toEqualTypeOf<HTMLDivElement | null>()
 }
 
 test('public hook overloads retain Vue types', () => {

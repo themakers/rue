@@ -11,7 +11,8 @@ export { watch as baseWatch } from '@vue/reactivity'
 export { onMounted, onUpdated, onBeforeUnmount } from './lifecycle'
 
 // ref and hooks
-export { useRef, useShallowRef, useCustomRef } from './ref'
+export { useRef, useShallowRef, useTemplateRef, useCustomRef } from './ref'
+export type { TemplateRef } from './ref'
 
 // reactive and hooks
 export { useReactive, useShallowReactive } from './reactive'

@@ -41,6 +41,23 @@ The runtime imports only `react` and `@vue/reactivity`. It has no dependency on
 pnpm add @themakers/rue react @vue/reactivity
 ```
 
+Rue can also be installed directly from a pinned git commit before an npm
+release exists:
+
+```json
+{
+  "dependencies": {
+    "@themakers/rue": "github:themakers/rue#<commit-sha>"
+  }
+}
+```
+
+The repository does not commit `dist`. During a standard npm or pnpm git
+installation, the package manager installs Rue's build-time dependencies and
+runs `prepare` to generate `dist` inside the installed package. `prepack`
+performs the same build and validates the output before creating a package
+tarball. Pin a commit SHA so installs remain reproducible.
+
 Requirements:
 
 - React 18 or 19;
@@ -68,6 +85,7 @@ Rue exports the complete public API of `@vue/reactivity`, plus:
 | `onBeforeUnmount`    | Passive effect cleanup                                     |
 | `useRef`             | Component-owned deep Vue ref                               |
 | `useShallowRef`      | Component-owned shallow Vue ref                            |
+| `useTemplateRef`     | Vue-style ref that binds directly to a JSX `ref`           |
 | `useCustomRef`       | Component-owned custom Vue ref                             |
 | `useReactive`        | Component-owned deep reactive object                       |
 | `useShallowReactive` | Component-owned shallow reactive object                    |
@@ -104,6 +122,26 @@ export function Profile() {
 Initial arguments follow React state initializer semantics: changing an
 initializer on a later render does not replace the existing ref, proxy, or
 computed object.
+
+## Template refs
+
+`useTemplateRef` provides one ref for both JSX binding and Vue-style access.
+React's renderer writes through the internal `.current` bridge while application
+code reads the same element through `.value`:
+
+```tsx
+import { onMounted, useTemplateRef } from '@themakers/rue'
+
+export function AutofocusInput() {
+  const input = useTemplateRef<HTMLInputElement>()
+
+  onMounted(() => input.value?.focus())
+  return <input ref={input} />
+}
+```
+
+The ref starts at `null`, receives the host element after commit, and returns to
+`null` when the element unmounts.
 
 ## Shared stores
 

@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
 - Added interrupted-transition tearing coverage and a broader React Native
   behavioral matrix.
 - Added component-owned `useReactive` TODO examples for every renderer.
+- Added `useTemplateRef` for one-variable Vue-style DOM refs in JSX.
 
 ### Changed
 
@@ -28,6 +29,8 @@ All notable changes to this project will be documented in this file.
   mutating committed adapter state from discarded renders.
 - CI covers React 18.3.1, the latest React 19 web release, and Expo's pinned
   React Native renderer matrix.
+- Git dependencies now build the ignored `dist` output through `prepare`, while
+  package tarballs build and validate it through `prepack`.
 
 ### Removed
 

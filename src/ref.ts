@@ -61,6 +61,44 @@ export function useShallowRef(initValue?: unknown) {
 }
 
 /**
+ * A component-owned shallow Vue ref that can also be passed directly to a JSX
+ * `ref` attribute. React writes the element through `.current`; Rue exposes the
+ * same value through Vue's `.value` interface.
+ */
+export type TemplateRef<T> = ShallowRef<T | null> & {
+  current: T | null
+}
+
+/**
+ * Creates a template ref for a JSX host element.
+ *
+ * @example
+ * ```tsx
+ * const input = useTemplateRef<HTMLInputElement>()
+ * onMounted(() => input.value?.focus())
+ *
+ * return <input ref={input} />
+ * ```
+ */
+export function useTemplateRef<T>(): TemplateRef<T> {
+  const [templateRef] = useReactState(() => {
+    const ref = vueShallowRef<T | null>(null) as TemplateRef<T>
+
+    Object.defineProperty(ref, 'current', {
+      get: () => ref.value,
+      set: (element: T | null) => {
+        ref.value = element
+      },
+    })
+
+    return ref
+  })
+
+  useReactiveSubscription(templateRef)
+  return templateRef
+}
+
+/**
  * Creates a customized ref with explicit control over its dependency tracking
  * and updates triggering.
  *

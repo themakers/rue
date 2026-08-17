@@ -15,6 +15,7 @@ const requiredExports = [
   'onUpdated',
   'onBeforeUnmount',
   'useRef',
+  'useTemplateRef',
   'useReactive',
   'useComputed',
   'useWatch',

@@ -7,6 +7,7 @@ import {
   onUpdated,
   useRef,
   useShallowRef,
+  useTemplateRef,
   useCustomRef,
   useReactive,
   useShallowReactive,
@@ -41,6 +42,7 @@ test('<type> should be the respective type', () => {
   expect(typeof onUpdated).toBe(hooksTargetType)
   expect(typeof useRef).toBe(hooksTargetType)
   expect(typeof useShallowRef).toBe(hooksTargetType)
+  expect(typeof useTemplateRef).toBe(hooksTargetType)
   expect(typeof useCustomRef).toBe(hooksTargetType)
   expect(typeof useReactive).toBe(hooksTargetType)
   expect(typeof useShallowReactive).toBe(hooksTargetType)
